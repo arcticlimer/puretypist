@@ -44,6 +44,7 @@ function generateWords(wordList) {
 }
 
 function calcWpm(startTime, charsTyped) {
+  if (charsTyped == 0) return 0;
   let minutes = (new Date().getTime() - startTime.getTime()) / 1000 / 60;
   return Math.round(charsTyped / 5 / minutes);
 }
