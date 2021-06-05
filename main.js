@@ -1,14 +1,13 @@
+const punctuation = "!@#$%&*;.,";
 let startTime;
 let textToType = generateWords(top1000);
 let remaining = [...textToType];
 let errors = 0;
 let wpm = 0;
 
-setText("text", textToType);
-setText("errors", `Errors: ${errors}`);
-setText("wpm", `wpm: ${wpm}`);
+setState(textToType, wpm, errors);
 
-function onKeyPress(e) {
+function handleKeypress(e) {
   if (remaining.length == textToType.length) startTime = new Date();
 
   if (e.key == remaining[0]) remaining.shift();
@@ -26,25 +25,52 @@ function onKeyPress(e) {
     return;
   }
 
-  let minutes = (new Date().getTime() - startTime.getTime()) / 1000 / 60;
-  let charsTyped = textToType.length - remaining.length;
-  let wpm = Math.round(charsTyped / 5 / minutes);
+  wpm = calcWpm(startTime, textToType.length - remaining.length);
   if (wpm > 300) return;
 
-  setText("wpm", `wpm: ${wpm}`);
-  setText("text", remaining.join(""));
-  setText("errors", `Errors: ${errors}`);
+  const text = remaining.join("");
+  setState(text, wpm, errors);
+
+  e.preventDefault();
 }
 
 // Helper functions
 function generateWords(wordList) {
   const numberOfWords = parseInt(get("wordsNumber").value) || 10;
   if (get("capitalization").checked) wordList = wordList.map(capitalize);
+  if (get("punctuation").checked) wordList = wordList.map(punctuate);
+  if (get("numbers").checked) wordList = wordList.map(numerate);
   return shuffle(wordList).slice(1, numberOfWords).join(" ");
+}
+
+function calcWpm(startTime, charsTyped) {
+  let minutes = (new Date().getTime() - startTime.getTime()) / 1000 / 60;
+  return Math.round(charsTyped / 5 / minutes);
 }
 
 function capitalize(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function setState(text, wpm, errors) {
+  setText("text", text);
+  setText("errors", `Errors: ${errors}`);
+  setText("wpm", `wpm: ${wpm}`);
+}
+
+function punctuate(string) {
+  if (Math.random() > 0.5)
+    return string + punctuation[Math.floor(Math.random() * punctuation.length)];
+  else return string;
+}
+
+function numerate(string) {
+  if (Math.random() < 0.2) return randRange(1, 1000).toString();
+  else return string;
+}
+
+function randRange(min, max) {
+  return Math.floor(Math.random() * (max - min) + min);
 }
 
 function setText(id, text) {
@@ -75,4 +101,4 @@ function shuffle(array) {
   return array;
 }
 
-document.addEventListener("keypress", onKeyPress);
+document.addEventListener("keypress", handleKeypress);
