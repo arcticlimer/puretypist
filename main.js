@@ -1,4 +1,12 @@
-const punctuation = "!@#$%&*;.,";
+const punctuation = "!@#$%&*;.,|";
+const surroundings = [
+  { l: "{", r: "}" },
+  { l: "[", r: "]" },
+  { l: "(", r: ")" },
+  { l: '"', r: '"' },
+  { l: "'", r: "'" },
+];
+
 let startTime;
 let textToType = generateWords(top1000);
 let remaining = [...textToType];
@@ -37,10 +45,29 @@ function handleKeypress(e) {
 // Helper functions
 function generateWords(wordList) {
   const numberOfWords = parseInt(get("wordsNumber").value) || 10;
-  if (get("capitalization").checked) wordList = wordList.map(capitalize);
-  if (get("punctuation").checked) wordList = wordList.map(punctuate);
-  if (get("numbers").checked) wordList = wordList.map(numerate);
-  return shuffle(wordList).slice(1, numberOfWords).join(" ");
+  words = wordList.map((word) =>
+    pipe(
+      word,
+      condCheck("capitalization", capitalize),
+      condCheck("punctuation", punctuate),
+      condCheck("numbers", numerate),
+      condCheck("surroundings", surround)
+    )
+  );
+  return shuffle(words).slice(1, numberOfWords).join(" ");
+}
+
+function condApply(pred, f) {
+  if (pred) return (x) => f(x);
+  else return (x) => x;
+}
+
+function condCheck(id, f) {
+  return condApply(checked(id), f);
+}
+
+function checked(id) {
+  return get(id).checked;
 }
 
 function calcWpm(startTime, charsTyped) {
@@ -50,7 +77,39 @@ function calcWpm(startTime, charsTyped) {
 }
 
 function capitalize(string) {
-  return string.charAt(0).toUpperCase() + string.slice(1);
+  return pipe(
+    string,
+    condApply(
+      chance(70 / 100),
+      (str) => str.charAt(0).toUpperCase() + str.slice(1)
+    )
+  );
+}
+
+function punctuate(string) {
+  return pipe(
+    string,
+    condApply(chance(50 / 100), (str) => str + pickRandom(punctuation))
+  );
+}
+
+function surround(string) {
+  surround = pickRandom(surroundings);
+  return pipe(
+    string,
+    condApply(chance(15 / 100), (str) => surround.l + str + surround.r)
+  );
+}
+
+function numerate(string) {
+  return pipe(
+    string,
+    condApply(chance(20 / 100), () => randRange(1, 1000).toString())
+  );
+}
+
+function pickRandom(array) {
+  array[Math.floor(Math.random() * array.length)];
 }
 
 function setState(text, wpm, errors) {
@@ -59,15 +118,8 @@ function setState(text, wpm, errors) {
   setText("wpm", `wpm: ${wpm}`);
 }
 
-function punctuate(string) {
-  if (Math.random() > 0.5)
-    return string + punctuation[Math.floor(Math.random() * punctuation.length)];
-  else return string;
-}
-
-function numerate(string) {
-  if (Math.random() < 0.2) return randRange(1, 1000).toString();
-  else return string;
+function chance(percentage) {
+  return Math.random() < percentage;
 }
 
 function randRange(min, max) {
