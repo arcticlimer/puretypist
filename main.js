@@ -10,10 +10,11 @@ const surroundings = [
 let startTime;
 let textToType = generateWords(top1000);
 let remaining = [...textToType];
+let accuracy = 0.0;
 let errors = 0;
 let wpm = 0;
 
-setState(textToType, wpm, errors);
+setState(textToType, wpm, errors, accuracy);
 
 function handleKeydown(e) {
   if (e.ctrlKey && e.key === "r") {
@@ -36,11 +37,14 @@ function handleKeypress(e) {
     return;
   }
 
-  wpm = calcWpm(startTime, textToType.length - remaining.length);
+  const charsTyped = textToType.length - remaining.length;
+  const totalChars = textToType.length;
+  accuracy = calcAccuracy(totalChars, errors);
+  wpm = calcWpm(startTime, charsTyped);
   if (wpm > 300) return;
 
   const text = remaining.join("");
-  setState(text, wpm, errors);
+  setState(text, wpm, errors, accuracy);
 }
 
 function reset() {
@@ -78,9 +82,13 @@ function checked(id) {
   return get(id).checked;
 }
 
+function calcAccuracy(total, errors) {
+  return ((total - errors) / total) * 100;
+}
+
 function calcWpm(startTime, charsTyped) {
   if (charsTyped == 0) return 0;
-  let minutes = (new Date().getTime() - startTime.getTime()) / 1000 / 60;
+  const minutes = (new Date().getTime() - startTime.getTime()) / 1000 / 60;
   return Math.round(charsTyped / 5 / minutes);
 }
 
@@ -120,10 +128,11 @@ function pickRandom(array) {
   return array[Math.floor(Math.random() * array.length)];
 }
 
-function setState(text, wpm, errors) {
+function setState(text, wpm, errors, accuracy) {
   setText("text", text);
   setText("errors", `Errors: ${errors}`);
   setText("wpm", `wpm: ${wpm}`);
+  setText("accuracy", `Accuracy: ${accuracy.toFixed(2)}%`);
 }
 
 function chance(percentage) {
