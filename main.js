@@ -15,6 +15,13 @@ let wpm = 0;
 
 setState(textToType, wpm, errors);
 
+function handleKeydown(e) {
+  if (e.ctrlKey && e.key === "r") {
+    e.preventDefault();
+    reset();
+  }
+}
+
 function handleKeypress(e) {
   if (remaining.length == textToType.length) startTime = new Date();
 
@@ -23,11 +30,7 @@ function handleKeypress(e) {
 
   if (remaining.length == 0) {
     if (e.key == "r") {
-      textToType = generateWords(top1000);
-      remaining = [...textToType];
-      setText("text", remaining.join(""));
-      errors = 0;
-      return;
+      return reset();
     }
     setText("text", "Finished! Press r to restart.");
     return;
@@ -38,8 +41,13 @@ function handleKeypress(e) {
 
   const text = remaining.join("");
   setState(text, wpm, errors);
+}
 
-  e.preventDefault();
+function reset() {
+  textToType = generateWords(top1000);
+  remaining = [...textToType];
+  setText("text", remaining.join(""));
+  errors = 0;
 }
 
 // Helper functions
@@ -94,10 +102,10 @@ function punctuate(string) {
 }
 
 function surround(string) {
-  surround = pickRandom(surroundings);
+  const surr = pickRandom(surroundings);
   return pipe(
     string,
-    condApply(chance(15 / 100), (str) => surround.l + str + surround.r)
+    condApply(chance(15 / 100), (str) => surr.l + str + surr.r)
   );
 }
 
@@ -109,7 +117,7 @@ function numerate(string) {
 }
 
 function pickRandom(array) {
-  array[Math.floor(Math.random() * array.length)];
+  return array[Math.floor(Math.random() * array.length)];
 }
 
 function setState(text, wpm, errors) {
@@ -155,3 +163,4 @@ function shuffle(array) {
 }
 
 document.addEventListener("keypress", handleKeypress);
+document.addEventListener("keydown", handleKeydown);
